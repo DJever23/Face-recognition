@@ -1,13 +1,24 @@
 # -*- coding: utf-8 -*-
-
-from face_recognition import process_image as pi
-from face_recognition import classifier as clf
+import os
+import sys
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
+sys.path.append(os.path.join(BASE_DIR, '../ui_with_tkinter'))
+sys.path.append(os.path.join(BASE_DIR, '../face_recognition'))
+#from face_recognition import process_image as pi
+import process_image as pi
+#from face_recognition import classifier as clf
+import classifier as clf
 import numpy as np
 import cv2
 from skimage import io
 from PIL import Image, ImageDraw, ImageFont
-import os
+import tensorflow as tf
 
+os.environ["CUDA_VISIBLE_DEVICES"] = '0' #use GPU with ID=0
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.5 # maximun alloc gpu50% of MEM
+config.gpu_options.allow_growth = True #allocate dynamically
 
 def predict_labels(best_model_list,
                    test_features,
@@ -218,7 +229,7 @@ def recognition(image_path, fr=None, state='recognition',
 
             face_position = box.astype(int)
             cv2.rectangle(image_data, (face_position[0], face_position[1]), (
-                face_position[2], face_position[3]), (0, 255, 0), 8)
+                face_position[2], face_position[3]), (0, 255, 0), 2)
 
         if fr is not None:
             predict_info.append(info)
@@ -348,9 +359,11 @@ def recognition(image_path, fr=None, state='recognition',
             if index in unique_indices:
                 if check_sf_features(test_features[index], label)[0] is False:
                     if language == 'chinese':
-                        labels[index] = '未知'
+                        #labels[index] = '未知'
+                        labels[index] = ''
                     else:
-                        labels[index] = 'Unknown'
+                        #labels[index] = 'Unknown'
+                        labels[index] = ''
                 else:
                     if language == 'chinese':
                         info = info + '{}，'.format(label)
@@ -360,9 +373,11 @@ def recognition(image_path, fr=None, state='recognition',
                         answer = answer + '{},'.format(label)
             else:
                 if language == 'chinese':
-                    labels[index] = '未知'
+                    labels[index] = ''
+                    #labels[index] = '未知'
                 else:
-                    labels[index] = 'Unknown'
+                    #labels[index] = 'Unknown'
+                    labels[index] = ''
         info = info[:-1]
         answer = answer[:-1]
         if language == 'english':
@@ -378,36 +393,37 @@ def recognition(image_path, fr=None, state='recognition',
 
         for index, label in enumerate(labels):
             face_position = face_boxes[index].astype(int)
+            print('face_position[%d]'%(index),face_position)
             label_pixels, font_size, line_size, rect_size, up_offset = \
                 None, None, None, None, None
             if face_number == 1:
-                rect_size = 8
+                rect_size = 2
                 if language == 'chinese':
-                    label_pixels = 140 * len(label)
-                    font_size = 140
-                    up_offset = 140
+                    label_pixels = 30 * len(label)#140 * len(label)
+                    font_size = 30#140
+                    up_offset = 40#140
                 else:
                     label_pixels = 90 * len(label)
                     up_offset = 20
                     font_size = 5
                 line_size = 9
             elif face_number < 4:
-                rect_size = 7
+                rect_size = 2#7
                 if language == 'chinese':
-                    label_pixels = 140 * len(label)
-                    font_size = 140
-                    up_offset = 140
+                    label_pixels = 30 * len(label)#140 * len(label)
+                    font_size = 30#140
+                    up_offset = 40#140
                 else:
                     label_pixels = 70 * len(label)
                     up_offset = 20
                     font_size = 4
                 line_size = 7
             elif face_number >= 4:
-                rect_size = 6
+                rect_size = 2#6
                 if language == 'chinese':
-                    label_pixels = 100 * len(label)
-                    font_size = 100
-                    up_offset = 100
+                    label_pixels = 30 * len(label)#100 * len(label)
+                    font_size = 30#100
+                    up_offset = 40#100
                 else:
                     label_pixels = 50 * len(label)
                     up_offset = 20
@@ -422,8 +438,10 @@ def recognition(image_path, fr=None, state='recognition',
                 pilimg = Image.fromarray(cv2img)
                 # use PIL to display Chinese characters in images
                 draw = ImageDraw.Draw(pilimg)
-                font = ImageFont.truetype('../resources/STKAITI.ttf',
+                font = ImageFont.truetype('../resources/STKAITI.TTF',
                                           font_size, encoding="utf-8")
+                #draw.text((face_position[0] - dis, face_position[1]-up_offset),
+                          #label, (0, 0, 255), font=font)
                 draw.text((face_position[0] - dis, face_position[1]-up_offset),
                           label, (0, 0, 255), font=font)
                 # convert to cv2
@@ -512,33 +530,34 @@ def recognition(image_path, fr=None, state='recognition',
             label_pixels, font_size, line_size, rect_size, up_offset = \
                 None, None, None, None, None
             if face_number == 1:
-                rect_size = 8
+                rect_size = 2
                 if language == 'chinese':
-                    label_pixels = 140 * len(unique_labels[i])
-                    font_size = 140
-                    up_offset = 140
+                    label_pixels = 30 * len(unique_labels[i])#140 * len(unique_labels[i])
+                    font_size = 30#140
+                    up_offset = 40#140
                 else:
                     label_pixels = 90 * len(unique_labels[i])
                     up_offset = 20
                     font_size = 5
                 line_size = 9
             elif face_number < 4:
-                rect_size = 7
+                rect_size = 2
                 if language == 'chinese':
-                    label_pixels = 140 * len(unique_labels[i])
-                    font_size = 140
-                    up_offset = 140
+                    label_pixels = 30#140 * len(unique_labels[i])
+                    font_size = 30#140
+                    up_offset = 30#140
                 else:
                     label_pixels = 70 * len(unique_labels[i])
                     up_offset = 20
                     font_size = 4
                 line_size = 7
             elif face_number >= 4:
-                rect_size = 6
+                rect_size = 2#6
                 if language == 'chinese':
-                    label_pixels = 100 * len(unique_labels[i])
-                    font_size = 100
-                    up_offset = 100
+                    #label_pixels = 100 * len(unique_labels[i])
+                    label_pixels = 30 * len(unique_labels[i])
+                    font_size = 30#100
+                    up_offset = 40#100
                 else:
                     label_pixels = 50 * len(unique_labels[i])
                     up_offset = 20
@@ -551,7 +570,7 @@ def recognition(image_path, fr=None, state='recognition',
                 cv2img = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
                 pilimg = Image.fromarray(cv2img)
                 draw = ImageDraw.Draw(pilimg)
-                font = ImageFont.truetype('../resources/STKAITI.ttf',
+                font = ImageFont.truetype('../resources/STKAITI.TTF',
                                           font_size, encoding="utf-8")
                 draw.text((face_position[0] - dis, face_position[1]-up_offset),
                           unique_labels[i], (0, 0, 255), font=font)
@@ -567,3 +586,95 @@ def recognition(image_path, fr=None, state='recognition',
 
     return answer, image_data
 
+if __name__ == '__main__':
+    fit_all_data = True 
+    image_path = '../test/32.jpg'
+    state = ['verification','recognition','search']
+    for i in range(len(state)):
+        if state[i] == 'verification':
+            used_labels = ['詹姆斯']
+            answer, image_data = recognition(image_path,
+                                        state=state[i],
+                                        used_labels=used_labels,
+                                        image_size=144,
+                                        all_data=fit_all_data,
+                                        output=False,
+                                        language='chinese')
+            print(answer)
+            image_data = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+            cv2.imwrite('../result/verification.jpg',image_data)
+            
+        elif state[i] == 'recognition':
+            used_labels = None
+            answer, image_data = recognition(image_path,
+                                        state=state[i],
+                                        used_labels=used_labels,
+                                        image_size=144,
+                                        all_data=fit_all_data,
+                                        output=False,
+                                        language='chinese')
+            print(answer)
+            image_data = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+            cv2.imwrite('../result/recognition.jpg',image_data)
+                
+        else:
+            used_labels = ['詹姆斯']
+            answer, image_data = recognition(image_path,
+                                        state=state[i],
+                                        used_labels=used_labels,
+                                        image_size=144,
+                                        all_data=fit_all_data,
+                                        output=False,
+                                        language='chinese')
+            print(answer)
+            image_data = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+            cv2.imwrite('../result/search.jpg',image_data)
+    
+            
+    '''
+    state = 'verification' 
+    used_labels = ['DJ','Lee'] # face verification must choose one label
+
+    answer1, image_data1 = recognition(verification_image_path,
+                                        state=state,
+                                        used_labels=used_labels,
+                                        image_size=144,
+                                        all_data=fit_all_data,
+                                        output=False,
+                                        language='english')
+
+    print(answer1)
+    image_data1 = cv2.cvtColor(image_data1, cv2.COLOR_BGR2RGB)
+    cv2.imwrite('./result/verification.jpg',image_data1)
+
+    recognition_image_path = './test/27.jpg'
+    state = 'recognition'
+    used_labels = None # Face recognition does not need to give labels
+
+    answer2, image_data2 = recognition(recognition_image_path,
+                                        state=state,
+                                        used_labels=used_labels,
+                                        image_size=144,
+                                        all_data=fit_all_data,
+                                        output=False,
+                                        language='english')
+
+    print(answer2)
+    image_data2 = cv2.cvtColor(image_data2, cv2.COLOR_BGR2RGB)
+    cv2.imwrite('./result/recognition.jpg',image_data2)
+
+    search_image_path = './test/9.jpg'
+    state = 'search'
+    used_labels = ['xiao']# Face search must choose at least one label.
+    answer3, image_data3 = recognition(search_image_path,
+                                        state=state,
+                                        used_labels=used_labels,
+                                        image_size=144,
+                                        all_data=fit_all_data,
+                                        output=False,
+                                        language='english')
+                                             
+    print(answer3)
+    image_data3 = cv2.cvtColor(image_data3, cv2.COLOR_BGR2RGB)
+    cv2.imwrite('./result/search.jpg',image_data3)
+    '''

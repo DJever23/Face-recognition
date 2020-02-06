@@ -1,8 +1,21 @@
 # -*- coding: utf-8 -*-
-from face_recognition import process_image as pi
-from face_recognition import classifier as clf
+import os
+import sys
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
+sys.path.append(os.path.join(BASE_DIR, '../ui_with_tkinter'))
+sys.path.append(os.path.join(BASE_DIR, '../face_recognition'))
+#from face_recognition import process_image as pi
+#from face_recognition import classifier as clf
+import process_image as pi
+import classifier as clf
 import csv
+import tensorflow as tf
 
+os.environ["CUDA_VISIBLE_DEVICES"] = '0' #use GPU with ID=0
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.5 # maximun alloc gpu50% of MEM
+config.gpu_options.allow_growth = True #allocate dynamically
 
 def train(training_dir, fr=None, image_size=144, process_output=True,
           all_data=False, use_alignment=True, clf_output=True,
@@ -43,7 +56,8 @@ def train(training_dir, fr=None, image_size=144, process_output=True,
                  'use_alignment': use_alignment,
                  'all_data': all_data}
     if fr is None:
-        write_list_or_dict_into_csv(info_dict, csv_path='models/info.csv')
+        #write_list_or_dict_into_csv(info_dict, csv_path='models/info.csv')
+        write_list_or_dict_into_csv(info_dict, csv_path='../models/info.csv')
     else:
         write_list_or_dict_into_csv(info_dict, csv_path='../models/info.csv')
     # return None, None, None, None
@@ -314,3 +328,8 @@ def check_model(fr, model_info=None, probability=False, all_data=False,
                 fr.show_information(model_info, clf_output=True)
 
     return model_info
+    
+if __name__ == '__main__':
+    training_set_dir = '../datasets/train_Chinese/'
+    fit_all_data = True
+    _, _, _, _ = train(training_set_dir,image_size=144,process_output=False,all_data=fit_all_data, clf_output=True,use_alignment=True, language='chinese')

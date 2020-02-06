@@ -7,7 +7,16 @@ import cv2
 import os
 import tensorflow as tf
 import numpy as np
-from face_recognition import align_dlib, detect_face, facenet
+
+import sys
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
+sys.path.append(os.path.join(BASE_DIR, '../ui_with_tkinter'))
+sys.path.append(os.path.join(BASE_DIR, '../face_recognition'))
+#from face_recognition import align_dlib, detect_face, facenet
+import align_dlib
+import detect_face
+import facenet
 
 
 def cv_imread(image_path, color_mode='rgb'):
