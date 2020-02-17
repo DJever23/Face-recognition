@@ -41,13 +41,13 @@ def training_knn_classifier(features, labels, flag=None, output=False):
                     continue
                 if nb > X_test.shape[0]:
                     continue
-                knn_clf = KNeighborsClassifier(n_neighbors=nb)
-                model = knn_clf.fit(X_train, y_train)
+                knn_clf = KNeighborsClassifier(n_neighbors=nb)# 建立一个k近邻模型对象
+                model = knn_clf.fit(X_train, y_train)#输入训练数据进行学习建模
                 if output is True:
                     print('split: {}, train size: {}, test_size: {}, neighbor: {}'.format(
                         split_index, X_train.shape[0], X_test.shape[0], nb))
 
-                train_predict = model.predict(X_train)
+                train_predict = model.predict(X_train)#对测试数据进行预测
                 train_accuracy = metrics.accuracy_score(y_train, train_predict)
                 if output is True:
                     print('train accuracy: %.2f%%' % (100 * train_accuracy))
@@ -192,7 +192,7 @@ def get_best_model(knn_model_list, svm_model_list, softmax_model_list):
         best_model_list.append(svm_model_list[i])
         best_model_list.append(softmax_model_list[i])
     if len(best_model_list) > 3:
-        best_model_list = sorted(best_model_list, key=itemgetter(2, 1, 3), reverse=True)[0:3]
+        best_model_list = sorted(best_model_list, key=itemgetter(2, 1, 3), reverse=True)[0:3]#降序排列前三个模型
 
     return best_model_list
 

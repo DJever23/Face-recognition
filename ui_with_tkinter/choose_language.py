@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 
 from tkinter import *
-from ui_with_tkinter import login_ui
-
+import os
+import sys
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
+sys.path.append(os.path.join(BASE_DIR, '../ui_with_tkinter'))
+sys.path.append(os.path.join(BASE_DIR, '../face_recognition'))
+#from ui_with_tkinter import login_ui
+import login_ui
 
 class ChooseLanguage:
 

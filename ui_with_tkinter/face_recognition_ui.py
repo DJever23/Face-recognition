@@ -4,13 +4,21 @@ from tkinter import *
 from tkinter.filedialog import askdirectory
 from tkinter.filedialog import askopenfilename
 from tkinter import messagebox as mb
-from face_recognition import test_images
-from face_recognition import training_images
+import os
+import sys
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
+sys.path.append(os.path.join(BASE_DIR, '../ui_with_tkinter'))
+sys.path.append(os.path.join(BASE_DIR, '../face_recognition'))
+#from face_recognition import test_images
+#from face_recognition import training_images
+import test_images
+import training_images
 from PIL import Image
 from PIL import ImageTk
 import cv2
 import numpy as np
-import os
+#import os
 import pandas as pd
 
 
@@ -648,13 +656,13 @@ class FaceRecognition:
                                                                                    image_size=int(self.image_size),
                                                                                    all_data=self.fit_all_data,
                                                                                    language=self.language)
-                    cv2.imwrite('../datasets/answers/answer.jpg', cv2.cvtColor(self.predict_image_data,
+                    cv2.imwrite('../result/answers/answer.jpg', cv2.cvtColor(self.predict_image_data,
                                                                   cv2.COLOR_RGB2BGR))
                     self.display = []
                     if self.test_state == 'recognition':
-                        self.show_image('../datasets/answers/answer.jpg', size=(800, 700), x=640, y=40)
+                        self.show_image('../result/answers/answer.jpg', size=(800, 700), x=640, y=40)
                     else:
-                        self.show_image('../datasets/answers/answer.jpg', size=(700, 700), x=740, y=40)
+                        self.show_image('../result/answers/answer.jpg', size=(700, 700), x=740, y=40)
             else:
                 if mb.askyesno("Predict", 'Do you want to start predicting?'):
                     self.answer_box.delete(0, END)
@@ -665,13 +673,13 @@ class FaceRecognition:
                                                                                    image_size=int(self.image_size),
                                                                                    all_data=self.fit_all_data,
                                                                                    language=self.language)
-                    cv2.imwrite('../datasets/answers/answer.jpg', cv2.cvtColor(self.predict_image_data,
+                    cv2.imwrite('../result/answers/answer.jpg', cv2.cvtColor(self.predict_image_data,
                                                                   cv2.COLOR_RGB2BGR))
                     self.display = []
                     if self.test_state == 'recognition':
-                        self.show_image('../datasets/answers/answer.jpg', size=(800, 700), x=640, y=40)
+                        self.show_image('../result/answers/answer.jpg', size=(800, 700), x=640, y=40)
                     else:
-                        self.show_image('../datasets/answers/answer.jpg', size=(700, 700), x=740, y=40)
+                        self.show_image('../result/answers/answer.jpg', size=(700, 700), x=740, y=40)
 
     def stop_test(self):
         pass

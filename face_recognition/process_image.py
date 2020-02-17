@@ -77,12 +77,20 @@ def process(state, path, fr=None, image_size=144, output=True,
         sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
                                                 log_device_placement=False))
         with sess.as_default():
+            '''
+            上述四行代码片段主要是在创建session的时候，对session进行参数配置用的，tf.ConfigProto()的参数如下：log_device_placement=True : 是否打印设备分配日志，
+                allow_soft_placement=True ： 如果你指定的设备不存在，允许TF自动分配设备。tf.ConfigProto(log_device_placement=True,allow_soft_placement=True)
+            在构造tf.Session()时可通过tf.GPUOptions作为可选配置参数的一部分来显示地指定需要分配的显存比例。
+            per_process_gpu_memory_fraction指定了每个GPU进程中使用显存的上限，但它只能均匀地作用于所有GPU，无法对不同GPU设置不同的上限。
+            '''
             if os.path.exists('models'):
                 p_net, r_net, o_net = detect_face.create_mtcnn(sess,
                                                                'models/mtcnn/')
+                #print('exists1')
             else:
                 p_net, r_net, o_net = detect_face.create_mtcnn(sess,
                                                                '../models/mtcnn/')
+                #print('exists2')os.path.exists判断当前文件路径里是否有models文件夹，没有则返回上一层查找
 
     if os.path.exists('models'):
         predictor_model = 'models/shape_predictor_68_face_landmarks.dat'
@@ -107,7 +115,7 @@ def process(state, path, fr=None, image_size=144, output=True,
     if output:
         process_info = []
     if state == 'training':
-        root_dir = path
+        root_dir = path#training_dir 
         labels = []  # the label of all faces.
         features = []  # the features of all faces.
 
@@ -117,13 +125,13 @@ def process(state, path, fr=None, image_size=144, output=True,
             if os.path.isdir(dir_path) is False:
                 raise ValueError('{} is not a directory!'.format(dir_path))
 
-            now_image_label = image_dir
-            now_image_list = os.listdir(dir_path)
+            now_image_label = image_dir#training_dir文件夹下的子文件夹就是label
+            now_image_list = os.listdir(dir_path)#每个label文件夹下的图片列表
             # now_image_number = len(now_image_list)
 
             special_features = []
             for index, image_name in enumerate(now_image_list):
-                if image_name[-4:] in ['.jpg', '.png', '.JPG', '.PNG']:
+                if image_name[-4:] in ['.jpg', '.png', '.JPG', '.PNG']:#获取文件名后缀
                     now_image_path = os.path.join(dir_path, image_name)
                     if output:
                         if language == 'chinese':

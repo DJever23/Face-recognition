@@ -60,7 +60,7 @@ def layer(op):
     return layer_decorated
 
 
-class Network(object):
+class Network(object):#继承了object对象，拥有了好多可操作对象，这些都是类中的高级特性。在python 3 中已经默认就帮你加载了object了
 
     def __init__(self, inputs, trainable=True):
         # The input nodes for this network
@@ -148,11 +148,13 @@ class Network(object):
         self.validate_padding(padding)
         # Get the number of channels in the input
         c_i = int(inp.get_shape()[-1])
+        #print('inp.get_shape()',inp.get_shape())
         # Verify that the grouping parameter is valid
         assert c_i % group == 0
         assert c_o % group == 0
         # Convolution for a given input and kernel
         convolve = lambda i, k: tf.nn.conv2d(i, k, [1, s_h, s_w, 1], padding=padding)
+        #tf.nn.conv2d (input, filter, strides, padding, use_cudnn_on_gpu=None, data_format=None, name=None)
         with tf.variable_scope(name) as scope:
             kernel = self.make_var('weights', shape=[k_h, k_w, c_i // group, c_o])
             # This is the common-case. Convolve the input without any further complications.
@@ -217,7 +219,7 @@ class Network(object):
         return softmax
 
 
-class PNet(Network):
+class PNet(Network):#继承Network
     def setup(self):
         (self.feed('data') #pylint: disable=no-value-for-parameter, no-member
              .conv(3, 3, 10, 1, 1, padding='VALID', relu=False, name='conv1')
@@ -286,7 +288,7 @@ def create_mtcnn(sess, model_path):
 
     with tf.variable_scope('pnet'):
         data = tf.placeholder(tf.float32, (None,None,None,3), 'input')
-        pnet = PNet({'data':data})
+        pnet = PNet({'data':data})#实例化一个对象
         pnet.load(os.path.join(model_path, 'det1.npy'), sess)
     with tf.variable_scope('rnet'):
         data = tf.placeholder(tf.float32, (None,24,24,3), 'input')
@@ -312,31 +314,37 @@ def detect_face(img, minsize, pnet, rnet, onet, threshold, factor):
     factor: the factor used to create a scaling pyramid of face sizes to detect in the image.
     """
     factor_count=0
-    total_boxes=np.empty((0,9))
+    total_boxes=np.empty((0,9))#np.empty()返回一个随机元素的矩阵，大小按照参数定义。
     points=np.empty(0)
     h=img.shape[0]
     w=img.shape[1]
     minl=np.amin([h, w])
+    #np.amin()返回 ：一维数组a中的最小值，二维数组需通过axis指定行或列，获取行或列的最小值，如不指定，则是所有元素的最小值  
     m=12.0/minsize
     minl=minl*m
     # create scale pyramid
     scales=[]
     while minl>=12:
-        scales += [m*np.power(factor, factor_count)]
+        scales += [m*np.power(factor, factor_count)]#power(x, y) 函数，计算 x 的 y 次方。
         minl = minl*factor
         factor_count += 1
-    
+    #print('factor_count',factor_count)#factor_count 9
+    #print('scales',scales)
+    #scales [0.6, 0.42539999999999994, 0.30160859999999995, 0.21384049739999994, 0.15161291265659996, 
+    #0.10749355507352938, 0.07621293054713232, 0.054034967757916816, 0.038310792140363016]
     # first stage
     for scale in scales:
-        hs=int(np.ceil(h*scale))
+        hs=int(np.ceil(h*scale))#计算大于等于该值的最小整数,ceil向上取整，floor向下取整
         ws=int(np.ceil(w*scale))
-        im_data = imresample(img, (hs, ws))
+        im_data = imresample(img, (hs, ws))#imresample，resize image
         im_data = (im_data-127.5)*0.0078125
-        img_x = np.expand_dims(im_data, 0)
-        img_y = np.transpose(img_x, (0,2,1,3))
+        img_x = np.expand_dims(im_data, 0)#[1,img_w,img_h,channel]
+        img_y = np.transpose(img_x, (0,2,1,3))#[1,img_h,img_w,channel]
         out = pnet(img_y)
         out0 = np.transpose(out[0], (0,2,1,3))
         out1 = np.transpose(out[1], (0,2,1,3))
+        #print('out0',out0.shape)
+        #print('out1',out1.shape)
         
         boxes, _ = generateBoundingBox(out1[0,:,:,1].copy(), out0[0,:,:,:].copy(), scale, threshold[0])
         # inter-scale nms
@@ -674,20 +682,20 @@ def generateBoundingBox(imap, reg, scale, t):
     dy1 = np.transpose(reg[:,:,1])
     dx2 = np.transpose(reg[:,:,2])
     dy2 = np.transpose(reg[:,:,3])
-    y, x = np.where(imap >= t)
+    y, x = np.where(imap >= t)#只有条件 (condition)，没有x和y，则输出满足条件 (即非0) 元素的坐标 
     if y.shape[0]==1:
-        dx1 = np.flipud(dx1)
+        dx1 = np.flipud(dx1)#镜像翻转矩阵
         dy1 = np.flipud(dy1)
         dx2 = np.flipud(dx2)
         dy2 = np.flipud(dy2)
     score = imap[(y,x)]
-    reg = np.transpose(np.vstack([ dx1[(y,x)], dy1[(y,x)], dx2[(y,x)], dy2[(y,x)] ]))
+    reg = np.transpose(np.vstack([ dx1[(y,x)], dy1[(y,x)], dx2[(y,x)], dy2[(y,x)] ]))#np.vstack:按垂直方向（行顺序）堆叠数组构成一个新的数组
     if reg.size==0:
         reg = np.empty((0,3))
     bb = np.transpose(np.vstack([y,x]))
-    q1 = np.fix((stride*bb+1)/scale)
+    q1 = np.fix((stride*bb+1)/scale)#转换成浮点型整数
     q2 = np.fix((stride*bb+cellsize-1+1)/scale)
-    boundingbox = np.hstack([q1, q2, np.expand_dims(score,1), reg])
+    boundingbox = np.hstack([q1, q2, np.expand_dims(score,1), reg])#按列方向堆叠
     return boundingbox, reg
  
 # function pick = nms(boxes,threshold,type)

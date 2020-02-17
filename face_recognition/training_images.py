@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, '../ui_with_tkinter'))
 sys.path.append(os.path.join(BASE_DIR, '../face_recognition'))
-#from face_recognition import process_image as pi
-#from face_recognition import classifier as clf
+# from face_recognition import process_image as pi
+# from face_recognition import classifier as clf
 import process_image as pi
 import classifier as clf
 import csv
 import tensorflow as tf
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '0' #use GPU with ID=0
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'  # use GPU with ID=0
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.5 # maximun alloc gpu50% of MEM
-config.gpu_options.allow_growth = True #allocate dynamically
+config.gpu_options.per_process_gpu_memory_fraction = 0.5  # maximun alloc gpu50% of MEM
+config.gpu_options.allow_growth = True  # allocate dynamically
+
 
 def train(training_dir, fr=None, image_size=144, process_output=True,
           all_data=False, use_alignment=True, clf_output=True,
@@ -56,7 +58,7 @@ def train(training_dir, fr=None, image_size=144, process_output=True,
                  'use_alignment': use_alignment,
                  'all_data': all_data}
     if fr is None:
-        #write_list_or_dict_into_csv(info_dict, csv_path='models/info.csv')
+        # write_list_or_dict_into_csv(info_dict, csv_path='models/info.csv')
         write_list_or_dict_into_csv(info_dict, csv_path='../models/info.csv')
     else:
         write_list_or_dict_into_csv(info_dict, csv_path='../models/info.csv')
@@ -71,7 +73,7 @@ def train(training_dir, fr=None, image_size=144, process_output=True,
     softmax_model_list = clf.training_softmax_classifier(features,
                                                          labels,
                                                          output=False)
-
+    # print('len(knn_model_list):',len(knn_model_list),'svm_model_list:',len(svm_model_list),'softmax_model_list:',len(softmax_model_list))
     best_classifier_model_list = clf.get_best_model(
         knn_model_list, svm_model_list, softmax_model_list)
     clf.save_best_classifier_model(best_classifier_model_list,
@@ -194,7 +196,7 @@ def check_model(fr, model_info=None, probability=False, all_data=False,
             if fr is not None:
                 fr.show_information(model_info, clf_output=True)
             best_probability_model = clf.load_best_probability_model(all_data=all_data)
-            
+            print('best_probability_model 1', best_probability_model)
             if language == 'chinese':
                 info = '模型类别：{}'.format(best_probability_model[4])
             else:
@@ -204,12 +206,12 @@ def check_model(fr, model_info=None, probability=False, all_data=False,
 
             if language == 'chinese':
                 info = '训练集准确度：{:.2%}，验证集大小为：{}, 验证集准确度：{:.2%}'.format(
-                        best_probability_model[1], best_probability_model[3], best_probability_model[2])
+                    best_probability_model[1], best_probability_model[3], best_probability_model[2])
             else:
                 info = 'Accuracy on the training set: {:.2%}, size of the validation set: {}, ' \
-                           'accuracy on the validation set: {:.2%}.'.format(best_probability_model[1],
-                                                                            best_probability_model[3],
-                                                                            best_probability_model[2])
+                       'accuracy on the validation set: {:.2%}.'.format(best_probability_model[1],
+                                                                        best_probability_model[3],
+                                                                        best_probability_model[2])
             print(info)
             model_info.append(info)
             if fr is not None:
@@ -231,6 +233,7 @@ def check_model(fr, model_info=None, probability=False, all_data=False,
                 fr.show_information(model_info, clf_output=True)
 
             best_probability_model = clf.load_best_probability_model(all_data=all_data)
+            print('best_probability_model 2', best_probability_model)
             if language == 'chinese':
                 info = '模型类别：{}'.format(best_probability_model[4])
             else:
@@ -269,6 +272,7 @@ def check_model(fr, model_info=None, probability=False, all_data=False,
                 fr.show_information(model_info, clf_output=True)
 
             best_classifier_model_list = clf.load_best_classifier_model(all_data=all_data)
+            print('best_classifier_model_list 1',best_classifier_model_list)
 
             for index, model in enumerate(best_classifier_model_list):
                 if language == 'chinese':
@@ -304,6 +308,7 @@ def check_model(fr, model_info=None, probability=False, all_data=False,
                 fr.show_information(model_info, clf_output=True)
 
             best_classifier_model_list = clf.load_best_classifier_model(all_data=all_data)
+            print('best_classifier_model_list 2',best_classifier_model_list)
             for index, model in enumerate(best_classifier_model_list):
                 # print(model)
                 if language == 'chinese':
@@ -328,8 +333,10 @@ def check_model(fr, model_info=None, probability=False, all_data=False,
                 fr.show_information(model_info, clf_output=True)
 
     return model_info
-    
+
+
 if __name__ == '__main__':
     training_set_dir = '../datasets/train_Chinese/'
     fit_all_data = True
-    _, _, _, _ = train(training_set_dir,image_size=144,process_output=False,all_data=fit_all_data, clf_output=True,use_alignment=True, language='chinese')
+    train(training_set_dir, image_size=144, process_output=False, all_data=fit_all_data, clf_output=True,
+          use_alignment=True, language='chinese')

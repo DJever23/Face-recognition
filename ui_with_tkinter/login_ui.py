@@ -2,7 +2,14 @@
 
 from tkinter import *
 from tkinter import messagebox as mb
-from ui_with_tkinter import face_recognition_ui
+#from ui_with_tkinter import face_recognition_ui
+import os
+import sys
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
+sys.path.append(os.path.join(BASE_DIR, '../ui_with_tkinter'))
+sys.path.append(os.path.join(BASE_DIR, '../face_recognition'))
+import face_recognition_ui
 from PIL import Image
 from PIL import ImageTk
 
@@ -36,11 +43,12 @@ class Login:
         self.canvas.create_image(0, 0, image=self.canvas.image, anchor='nw')
         if self.language == 'chinese':
             self.canvas.create_text(330, 180, text="人脸识别系统", font=('楷体', 64), fill='white', anchor='nw')
-            self.canvas.create_text(405, 380, text="制作：陈振宇", font=('楷体', 48), fill='white', anchor='nw')
+            #self.canvas.create_text(405, 380, text="制作：陈振宇", font=('楷体', 48), fill='white', anchor='nw')
+            self.canvas.create_text(405, 380, text="制作：邓杰", font=('楷体', 48), fill='white', anchor='nw')
         else:
             self.canvas.create_text(155, 180, text="Face Recognition System", font=('Times New Roman', 64),
                                     fill='white', anchor='nw')
-            self.canvas.create_text(305, 380, text="Producer: ChenZhenyu", font=('Times New Roman', 48),
+            self.canvas.create_text(305, 380, text="Producer: DengJie", font=('Times New Roman', 48),
                                     fill='white', anchor='nw')
         self.canvas.place(x=0, y=0)
         if self.language == 'chinese':
