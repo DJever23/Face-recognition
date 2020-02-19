@@ -98,6 +98,8 @@ def find_people_from_image(best_probability_model, test_features, face_number, a
 
     unique_probability = np.array(unique_probability)
     unique_indices = np.array(unique_indices)
+    print('unique_probability',unique_probability)
+    print('unique_indices',unique_indices)
 
     return labels, probability, unique_labels, unique_probability, unique_indices
 
@@ -131,9 +133,8 @@ def check_sf_features(feature, label):
     return True, sum_dis
 
 
-def recognition(image_path, best_probability_model, test_features, face_number, face_boxes, fr=None,
-                state='recognition',
-                used_labels=None, image_size=144, all_data=False, output=False, language='chinese'):
+def recognition(best_probability_model, test_features, face_number, fr=None,
+                state='recognition', all_data=False, language='chinese'):
     """Implement face verification, face recognition and face search functions.
     Inputs:
       - image_path: A string contains the path to the image.
@@ -153,12 +154,9 @@ def recognition(image_path, best_probability_model, test_features, face_number, 
       - image_data: The image data after prediction.
     """
     answer = ''
-    # image_data = io.imread(image_path)
-    image_data = image_path.copy()
     predict_info = []
 
     if state == 'recognition':
-        # best_probability_model = clf.load_best_probability_model(all_data=all_data)
         labels, _, unique_labels, unique_probability, unique_indices = \
             find_people_from_image(best_probability_model, test_features, face_number, all_data=all_data)
 
@@ -362,46 +360,24 @@ if __name__ == '__main__':
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             if gray.ndim == 2:
                 image = facenet.to_rgb(gray)
-            test_features, face_number, face_boxes, j = process('test',
+            test_features, face_number, face_boxes, flag = process('test',
                                                                 image,
                                                                 image_size=144,)
             print('face_number', face_number)
             print('test_features', test_features)
-            if j:
+            if flag:
                 state = 'recognition'
-                used_labels = None
-                answer, labels = recognition(image,
-                                             best_probability_model,
+                answer, labels = recognition(best_probability_model,
                                              test_features,
                                              face_number,
-                                             face_boxes,
                                              fr=None,
                                              state=state,
-                                             used_labels=used_labels,
-                                             image_size=144,
                                              all_data=fit_all_data,
-                                             output=False,
                                              language='english',
                                              )
                 print(answer)
-                # image_data = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-                # cv2.imwrite('../result/recognition.jpg', image_data)
                 for index, label in enumerate(labels):
                     frame = puttext(frame,face_boxes,face_number,language='english')
-                    '''
-                    face_position = face_boxes[index].astype(int)
-                    print('face_position[%d]' % (index), face_position)
-
-                    if language == 'english':
-                        print('in line else')
-                        cv2.putText(frame, label,
-                                    (face_position[0], face_position[1]),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.8,
-                                    (255, 0, 0), thickness=2, lineType=2)
-                        cv2.rectangle(frame, (face_position[0], face_position[1]),
-                                      (face_position[2], face_position[3]),
-                                      (0, 255, 0), 2, 8, 0)
-                        '''
                 cv2.imshow('camera', frame)
         c += 1
         key = cv2.waitKey(3)

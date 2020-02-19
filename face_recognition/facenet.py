@@ -229,10 +229,10 @@ def train(total_loss, global_step, optimizer, learning_rate, moving_average_deca
 
 
 def prewhiten(x):
-    mean = np.mean(x)
-    std = np.std(x)
+    mean = np.mean(x)#求均值
+    std = np.std(x)#计算标准差
     std_adj = np.maximum(std, 1.0/np.sqrt(x.size))
-    y = np.multiply(np.subtract(x, mean), 1/std_adj)
+    y = np.multiply(np.subtract(x, mean), 1/std_adj)#np.subtract(x, mean),两值相减
     return y  
 
 

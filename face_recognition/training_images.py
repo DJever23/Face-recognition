@@ -336,7 +336,7 @@ def check_model(fr, model_info=None, probability=False, all_data=False,
 
 
 if __name__ == '__main__':
-    training_set_dir = '../datasets/train_Chinese/'
+    training_set_dir = '../datasets/use_train/'
     fit_all_data = True
     train(training_set_dir, image_size=144, process_output=False, all_data=fit_all_data, clf_output=True,
-          use_alignment=True, language='chinese')
+          use_alignment=True, language='english')
