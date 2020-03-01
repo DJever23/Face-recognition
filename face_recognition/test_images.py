@@ -187,7 +187,7 @@ def recognition(image_path, state, fr=None,
         'test', image_path, fr=fr, image_size=image_size, output=output)
 
 
-    image_data = cv2.imread(image_path)
+
 
     predict_info = []
 
@@ -203,6 +203,7 @@ def recognition(image_path, state, fr=None,
     '''
     for i in state:
         answer = ''
+        image_data = cv2.imread(image_path)
         if i == 'verification':
             print('Start verification')
             best_classifier_model_list = clf.load_best_classifier_model(all_data=all_data)
@@ -609,15 +610,16 @@ def recognition(image_path, state, fr=None,
                               (0, 255, 0), rect_size)
             print(answer)
             #image_data = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-            cv2.imwrite('../result/serch.jpg', image_data)
+            cv2.imwrite('../result/search.jpg', image_data)
     result = 'result images have already saved.'
     return result, answer, image_data
 
 
 if __name__ == '__main__':
     fit_all_data = True
-    image_path = '../test/37.jpg'
-    state = ['verification', 'recognition', 'search']
+    image_path = '../test/43.jpg'
+    # state = ['verification', 'recognition', 'search']
+    state = ['recognition']
     used_labels = ['LeBron', 'Davis']  # verification只验证used_labels[0],search时会查找所有label
     result, _, _ = recognition(image_path,
                                state,
