@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, '../ui_with_tkinter'))
@@ -19,6 +20,32 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '0'  # use GPU with ID=0
 config = tf.ConfigProto()
 config.gpu_options.per_process_gpu_memory_fraction = 0.5  # maximun alloc gpu50% of MEM
 config.gpu_options.allow_growth = True  # allocate dynamically
+
+
+def predict_labels(best_model_list,
+                   test_features,
+                   all_data=False):
+    """Predict with the best three models.
+    Inputs:
+      - best_model_list: A list contains the best three models.
+      - test_features: A numpy array contains the features of the test images.
+      - face_number: An integer, the number of faces that we found in the test image.
+      - all_data: True or False, whether the model is trained with all data.
+
+    Return:
+      - labels_array: A numpy array contains the labels which predicted by
+            the best three models .
+    """
+    labels_array = []
+    for index, model in enumerate(best_model_list):
+        if all_data:
+            predict = model[0].predict(test_features)
+        else:
+            predict = model[0].predict(test_features)
+        labels_array.append(predict)
+
+    labels_array = np.array(labels_array)
+    return labels_array
 
 
 def predict_probability(best_probability_model,
@@ -98,8 +125,8 @@ def find_people_from_image(best_probability_model, test_features, face_number, a
 
     unique_probability = np.array(unique_probability)
     unique_indices = np.array(unique_indices)
-    print('unique_probability',unique_probability)
-    print('unique_indices',unique_indices)
+    print('unique_probability', unique_probability)
+    print('unique_indices', unique_indices)
 
     return labels, probability, unique_labels, unique_probability, unique_indices
 
@@ -133,8 +160,7 @@ def check_sf_features(feature, label):
     return True, sum_dis
 
 
-def recognition(best_probability_model, test_features, face_number, fr=None,
-                state='recognition', all_data=False, language='chinese'):
+def recognition(image, state, fr=None, all_data=False, language='english'):
     """Implement face verification, face recognition and face search functions.
     Inputs:
       - image_path: A string contains the path to the image.
@@ -155,60 +181,174 @@ def recognition(best_probability_model, test_features, face_number, fr=None,
     """
     answer = ''
     predict_info = []
+    for i in state:
+        if i not in {'verification', 'recognition', 'search'}:
+            raise ValueError('{} is not a valid argument!'.format(state))
+    test_features, face_number, face_boxes, flag = process('test',
+                                                           image,
+                                                           image_size=144, )
+    if flag:
+        for i in state:
+            if i == 'verification':
+                print('Start verification')
 
-    if state == 'recognition':
-        labels, _, unique_labels, unique_probability, unique_indices = \
-            find_people_from_image(best_probability_model, test_features, face_number, all_data=all_data)
+                labels_array = predict_labels(best_classifier_model_list,
+                                              test_features,
+                                              all_data=all_data)
+                labels = []
+                for line in labels_array.T:  # 转置
+                    unique, counts = np.unique(line, return_counts=True)  # 该函数是去除数组中的重复数字，并进行排序之后输出
+                    temp_label = unique[np.argmax(counts)]
+                    labels.append(temp_label)
 
-        info = ''
-        if language == 'chinese':
-            info = info + '从图像中检测到'
-        else:
-            info = info + 'Detected '
-        answer = answer + info
-
-        for index, label in enumerate(labels):
-            if index in unique_indices:
-                if check_sf_features(test_features[index], label)[0] is False:
+                if used_labels[0] in labels:
                     if language == 'chinese':
-                        # labels[index] = '未知'
-                        labels[index] = ''
+                        answer = answer + '验证成功！这张图像被认定为{}！'.format(used_labels[0])
+                        info = '验证成功！这张图像被认定为{}！'.format(used_labels[0])
                     else:
-                        labels[index] = 'Unknown'
-                        # labels[index] = ''
+                        answer = answer + 'Successful Verification! This image was ' \
+                                          'identified as {}!'.format(used_labels[0])
+                        info = 'Successful Verification! This image ' \
+                               'was identified as {}!'.format(used_labels[0])
                 else:
                     if language == 'chinese':
-                        info = info + '{}，'.format(label)
-                        answer = answer + '{}，'.format(label)
+                        answer = answer + '验证失败！这张图像不被认定为{}！' \
+                                          ''.format(used_labels[0])
+                        info = '验证失败！这张图像不被认定为{}！'.format(used_labels[0])
                     else:
-                        info = info + '{},'.format(label)
-                        answer = answer + '{},'.format(label)
-            else:
+                        answer = answer + 'Verification failed! This image is not ' \
+                                          'recognized as {}!'.format(used_labels[0])
+                        info = 'Verification failed! This image is not ' \
+                               'recognized as {}!'.format(used_labels[0])
+
+                for index, box in enumerate(face_boxes):
+                    face_position = box.astype(int)
+                    cv2.rectangle(image, (face_position[0], face_position[1]), (
+                        face_position[2], face_position[3]), (0, 255, 0), 2)
+
+                if fr is not None:
+                    predict_info.append(info)
+                    fr.show_information(predict_info, predict=True)
+                if mode == 'video':
+                    cv2.imshow('camera', image)
+                else:
+                    cv2.imshow('camera', image)
+                    cv2.imwrite('../result/verification.jpg', image)
+                    cv2.waitKey()
+
+            elif i == 'recognition':
+                print('Start recognition')
+                labels, _, unique_labels, unique_probability, unique_indices = \
+                    find_people_from_image(best_probability_model, test_features, face_number, all_data=all_data)
+                info = ''
                 if language == 'chinese':
-                    labels[index] = ''
-                    # labels[index] = '未知'
+                    info = info + '从图像中检测到'
                 else:
-                    labels[index] = 'Unknown'
-                    #labels[index] = ''
-        info = info[:-1]
-        answer = answer[:-1]
-        if language == 'english':
-            info = info + ' in this image!'
-            answer = answer + ' in this image!'
-        else:
-            info = info + '！'
-            answer = answer + '！'
+                    info = info + 'Detected '
+                answer = answer + info
 
-        if fr is not None:
-            predict_info.append(info)
-            fr.show_information(predict_info, predict=True)
+                for index, label in enumerate(labels):
+                    if index in unique_indices:
+                        if check_sf_features(test_features[index], label)[0] is False:
+                            if language == 'chinese':
+                                # labels[index] = '未知'
+                                labels[index] = ''
+                            else:
+                                # labels[index] = 'Unknown'
+                                labels[index] = ''
+                        else:
+                            if language == 'chinese':
+                                info = info + '{}，'.format(label)
+                                answer = answer + '{}，'.format(label)
+                            else:
+                                info = info + '{},'.format(label)
+                                answer = answer + '{},'.format(label)
+                    else:
+                        if language == 'chinese':
+                            labels[index] = ''
+                            # labels[index] = '未知'
+                        else:
+                            # labels[index] = 'Unknown'
+                            labels[index] = ''
+                info = info[:-1]
+                answer = answer[:-1]
+                if language == 'english':
+                    info = info + ' in this image!'
+                    answer = answer + ' in this image!'
+                else:
+                    info = info + '！'
+                    answer = answer + '！'
 
-    return answer, labels
+                if fr is not None:
+                    predict_info.append(info)
+                    fr.show_information(predict_info, predict=True)
+                for index, label in enumerate(labels):
+                    face_position = face_boxes[index].astype(int)
+                    image_data = puttext(image, face_position, label, face_number, language='english')
+                if mode == 'video':
+                    cv2.imshow('camera', image_data)
+                else:
+                    cv2.imshow('camera', image_data)
+                    cv2.imwrite('../result/recognition.jpg', image_data)
+                    cv2.waitKey()
 
 
-def process(state, path, image_size=144):
+            elif i == 'search':
+                print('Start search')
+                _, _, unique_labels, unique_probability, unique_indices = \
+                    find_people_from_image(best_probability_model, test_features, face_number, all_data=all_data)
+                n = unique_labels.shape[0]
+
+                found_indices = []
+                if language == 'chinese':
+                    info = '从图像中找到'
+                else:
+                    info = 'Found '
+                answer = answer + info
+                for i in range(n):
+                    if unique_labels[i] not in used_labels:
+                        continue
+                    index = unique_indices[i]
+                    if check_sf_features(test_features[index], unique_labels[i])[0] is False:
+                        continue
+                    if language == 'chinese':
+                        answer = answer + '{}，'.format(unique_labels[i])
+                        info = info + '{}，'.format(unique_labels[i])
+                    else:
+                        answer = answer + '{},'.format(unique_labels[i])
+                        info = info + '{},'.format(unique_labels[i])
+                    found_indices.append(i)
+
+                info = info[:-1]
+                answer = answer[:-1]
+                if language == 'english':
+                    info = info + ' in this image!'
+                    answer = answer + ' in this image!'
+                else:
+                    info = info + '！'
+                    answer = answer + '！'
+
+                if fr is not None:
+                    predict_info.append(info)
+                    fr.show_information(predict_info, predict=True)
+                for i in found_indices:
+                    index = unique_indices[i]
+                    face_position = face_boxes[index].astype(int)
+                    image_data = puttext(image, face_position, unique_labels[i], face_number, language='english')
+                    if mode == 'video':
+                        cv2.imshow('camera', image_data)
+                    else:
+                        cv2.imshow('camera', image_data)
+                        cv2.imwrite('../result/search.jpg', image_data)
+                        cv2.waitKey()
+            return answer
+    else:
+        return 0
+
+
+def process(state, image, image_size=144):
     if state == 'test':
-        test_image_data = path.copy()
+        test_image_data = image.copy()
         test_features = []
         face_boxes, _ = detect_face.detect_face(
             test_image_data, minsize, p_net, r_net, o_net, threshold, factor)
@@ -245,22 +385,21 @@ def process(state, path, image_size=144):
             return test_features, face_number, face_boxes, 1
 
 
-def puttext(image_data, face_boxes, face_number, language='english'):
-    face_position = face_boxes[index].astype(int)
+def puttext(image_data, face_position, label, face_number, language='english'):
     # print('face_position[%d]' % (index), face_position)
     label_pixels, font_size, line_size, rect_size, up_offset = \
         None, None, None, None, None
     if face_number == 1:
-        rect_size = 4
+        rect_size = 2
         if language == 'chinese':
             label_pixels = 30 * len(label)  # 140 * len(label)
             font_size = 30  # 140
             up_offset = 40  # 140
         else:
-            label_pixels = 30 * len(label)
-            up_offset = 40
-            font_size = 2
-        line_size = 4
+            label_pixels = 20 * len(label)
+            up_offset = 20
+            font_size = 1
+        line_size = 2
     elif face_number < 4:
         rect_size = 2  # 7
         if language == 'chinese':
@@ -273,19 +412,19 @@ def puttext(image_data, face_boxes, face_number, language='english'):
             font_size = 1
         line_size = 2
     elif face_number >= 4:
-        rect_size = 4  # 6
+        rect_size = 2  # 6
         if language == 'chinese':
             label_pixels = 30 * len(label)  # 100 * len(label)
             font_size = 30  # 100
             up_offset = 40  # 100
         else:
-            label_pixels = 30 * len(label)
-            up_offset = 40
-            font_size = 2
+            label_pixels = 10 * len(label)
+            up_offset = 20
+            font_size = 1
         line_size = 2
 
     dis = (label_pixels - (face_position[2] - face_position[0])) // 2
-    #dis = 0
+    # dis = 0
 
     if language == 'chinese':
         # The color coded storage order in cv2(BGR) and PIL(RGB) is different
@@ -305,10 +444,10 @@ def puttext(image_data, face_boxes, face_number, language='english'):
         cv2.putText(image_data, label,
                     (face_position[0] - dis, face_position[1] - up_offset),
                     cv2.FONT_HERSHEY_SIMPLEX, font_size,
-                    (255, 0, 0), line_size)
+                    (0, 0, 255), line_size)
     image_data = cv2.rectangle(image_data, (face_position[0], face_position[1]),
-                  (face_position[2], face_position[3]),
-                  (0, 255, 0), rect_size)
+                               (face_position[2], face_position[3]),
+                               (0, 255, 0), rect_size)
     return image_data
 
 
@@ -334,65 +473,45 @@ if __name__ == '__main__':
     embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
     phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
     all_data = True
+    best_classifier_model_list = clf.load_best_classifier_model(all_data=all_data)
     best_probability_model = clf.load_best_probability_model(all_data=True)
-    print('best_probability_model', best_probability_model)
+    #print('best_probability_model', best_probability_model)
 
     fit_all_data = True
-    # image_path = '../test/all_2.jpg'
-    video = "http://admin:admin@192.168.0.13:8081"  # 此处@后的ipv4 地址需要修改为自己的地址
-    # 参数为0表示打开内置摄像头，参数是视频文件路径则打开视频
-    # video = 0
-    capture = cv2.VideoCapture(video)
-    cv2.namedWindow("camera", 1)
-    language = 'english'
-    c = 0
-    num = 0
-    frame_interval = 3  # frame intervals
-    test_features = []
+    mode = 'video'  # 'video' or 'picture'
+    state = ['recognition']  # state = ['verification', 'recognition', 'search']
+    used_labels = ['LeBron']  # verification只验证used_labels[0],search时会查找所有label
 
-    while True:
-        ret, frame = capture.read()
-        timeF = frame_interval
-
-        if (c % timeF == 0):
-
+    if mode == 'video':
+        video = "http://admin:admin@192.168.0.13:8081"
+        # video = 0
+        capture = cv2.VideoCapture(video)
+        cv2.namedWindow("camera", 1)
+        language = 'english'
+        c = 0
+        num = 0
+        frame_interval = 3  # frame intervals
+        test_features = []
+        while True:
+            ret, frame = capture.read()
             cv2.imshow("camera", frame)
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            if gray.ndim == 2:
-                image = facenet.to_rgb(gray)
-            test_features, face_number, face_boxes, flag = process('test',
-                                                                image,
-                                                                image_size=144,)
-            print('face_number', face_number)
-            print('test_features', test_features)
-            if flag:
-                state = 'recognition'
-                answer, labels = recognition(best_probability_model,
-                                             test_features,
-                                             face_number,
-                                             fr=None,
-                                             state=state,
-                                             all_data=fit_all_data,
-                                             language='english',
-                                             )
-                print(answer)
-                for index, label in enumerate(labels):
-                    frame = puttext(frame,face_boxes,face_number,language='english')
-                cv2.imshow('camera', frame)
-        c += 1
-        key = cv2.waitKey(3)
-
-        if key == 27:
-            # esc键退出
-            print("esc break...")
-            break
-
-        if key == ord(' '):
-            # 保存一张图像
-            num = num + 1
-            filename = "frames_%s.jpg" % num
-            cv2.imwrite('../result/'+filename, frame)
-
+            answer = recognition(frame, state, fr=None, all_data=fit_all_data, language='english', )
+            print(answer)
+            c += 1
+            key = cv2.waitKey(3)
+            if key == 27:
+                # esc键退出
+                print("esc break...")
+                break
+            if key == ord(' '):
+                # 保存一张图像
+                num = num + 1
+                filename = "frames_%s.jpg" % num
+                cv2.imwrite('../result/' + filename, frame)
         # When everything is done, release the capture
-    capture.release()
-    cv2.destroyWindow("camera")
+        capture.release()
+        cv2.destroyWindow("camera")
+    else:
+        image = cv2.imread('../test/42.jpg')
+        answer = recognition(image, fr=None, state=state, all_data=fit_all_data, language='english', )
+        print(answer)
